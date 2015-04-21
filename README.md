@@ -15,12 +15,9 @@
 
 `git clone <url til repository du nettopp forket>`
 
-### Modifiser gruppe-spesifikke innstillinger
+### Skaff gruppe-spesifikke innstillinger
 
 For å jukse litt kjører vi alle løsningene på byggeservere, og ikke på egne servere som vi ville gjort i virkeligheten. Men siden vi kommer til å kjøre flere løsninger side om side må de ha sin egen, unike port. Du får et tildelt portnummer av instruktør.
-
-1. Åpne `POM.xml`-filen i repoet du klonet, og finn port-innstillingen til Jetty. Endre portnummer til det du ble tildelt.
-2. Lagre filen.
 
 Når alt kjører i TeamCity vil addressen til din løsning være: `http://nerdschool.cloudapp.net:PORT/`
 
@@ -54,41 +51,61 @@ Målet er at når man sjekker inn kode på en git branch i GitHub, så skal et b
 
 ### Velg et gruppenavn
 
-Siden vi kommer til å ha flere like konfigurasjoner side ved side må vi ha et unikt navn en del steder. Gruppenavnet bør være kort og ikke ha mellomrom. Vi kommer til å referere til gruppenavnet en del steder videre.
-
-### TeamCity 101
-
-![TeamCity oversikt](https://github.com/eaardal/eaardal.github.io/tree/master/nerdschool-ci/TeamCityOverview.jpeg)
+Siden vi kommer til å ha flere like konfigurasjoner side ved side må vi ha et unikt navn en del steder. Gruppenavnet bør være kort og ikke ha mellomrom. Vi kommer til å referere til gruppenavnet en del steder videre med `<gruppenavn>`-taggen.
 
 ### Opprett prosjekt
-Hver gruppe må sette opp sitt eget sub-prosjekt (se bildet over)
+Hver gruppe må sette opp sitt eget sub-prosjekt
 
 **Merk: Vi refererer til dette prosjektet som gruppeprosjektet videre**
 
-1. `Administration` 
+Logg på TeamCity.
+
+1. Velg `Administration` oppe til høyre 
 2. Trykk på `Nerdschool Training` prosjektet
 3. `Create subproject`
-4. Name: `Unikt navn på gruppe eller person`
+4. Name: `<gruppenavn>`
 
 ### Opprett parametere
 Parametere er systemvariabler som referer til verdier, navn eller mapper på byggeserveren som vi kan bruke under oppsettet. F.eks så referer variabelen `%teamcity.agent.work.dir%` til mappen `C:\TeamCity\buildAgent\work` på byggeserveren, som er rotmappen for der filer TeamCity henter fra git blir lagt. 
 
 Vi må opprette noen slike variabler som er unike for *gruppeprosjektet*.
 
-1. På Admin-siden til gruppeprosjektet du nettopp opprettet, velg `Parameters` i menyen til venstre.
+1. På Admin-siden til gruppeprosjektet du nettopp opprettet, velg `Parameters` i menyen til venstre og legg til følgende parametere:
 
-2. `Add new parameter`
-3. Name: `<gruppenavn>.app.target`
-4. Value: Plassering til `target`-mappen: `app\target`
-5. `Add new parameter`
-6. Name: `<gruppenavn>.dropfolder`
-7. Value: `%teamcity.agent.work.dir%\<gruppenavn>\`
-8. `Add new parameter`
-9. Name: `<gruppenavn>.dropfolder.app`
-10. Value: `app`
-11. `Add new parameter`
-12. Name: `<gruppenavn>.dropfolder.app.target`
-13. Value: `%system.dropfolder%\app\target`
+<table>
+	<thead>
+		<tr>
+			<td>Name</td>
+			<td>Value</td>
+		</tr>
+	</thead>
+	<tbody>
+		<tr>
+			<td>
+			 	GRUPPENAVN.app
+			</td>
+			<td>app</td>
+		</tr>
+		<tr>
+			<td>
+			 	GRUPPENAVN.app.target
+			</td>
+			<td>app\target</td>
+		</tr>
+		<tr>
+			<td>
+			 	GRUPPENAVN.dropfolder
+			</td>
+			<td>%teamcity.agent.work.dir%\GRUPPENAVN\</td>
+		</tr>
+		<tr>
+			<td>
+			 	GRUPPENAVN.dropfolder.app.target
+			</td>
+			<td>%GRUPPENAVN.dropfolder%%GRUPPENAVN.app.target%</td>
+		</tr>
+	</tbody>
+</table>
 
 ### Opprett VCS Root (Version Control System = Git)
 
@@ -115,7 +132,7 @@ Kommandoen for å bygge med Maven er `mvn clean install`, gitt at man står i ma
 2. Runner type: `Maven`
 3. Step name: `Compile & Test`
 4. Goals: `clean install`
-5. Path to POM file: Avhenger av path til POM.xml i ditt GitHub repo. Trykk på "tree-node" ikonet ved siden av tekstboksen for å velge manuelt. Merk: Pathen inkluderer POM.xml filen, ikke bare mappen til der POM.xml er. Om du bruker repoet fra nerdschool er pathen trolig `app\POM.xml`.
+5. `app\POM.xml`.
 6. `Save`
 
 ### Build Step 2: Copy to dropfolder
@@ -162,7 +179,7 @@ Dette vil kjøre Maven kommandoen `mvn compile war:war` som egentlig er å kompi
 
 ```
 mkdir %<gruppenavn>.dropfolder%\deploy -p
-xcopy %<gruppenavn>.dropfolder.app.target%\ciapp-1.0-SNAPSHOT.war %system.dropfolder%\deploy /Y
+xcopy %<gruppenavn>.dropfolder.app.target%\ciapp-1.0-SNAPSHOT.war %<gruppenavn>.dropfolder%\deploy /Y
 ```
 
 Først oppretter vi en ny mappe som vi kan kopiere den ferdig bydge `.war`-filen som er løsningen vi skal deploye, som 1 fil. Vi gjør dette av samme grunn som vi opprettet dropfolderen tidligere, for å kunne dele filer på kryss på av byggekonfigurasjoner. Om mappen finnes, oppretter vi den på nytt (`-p`-flagget).
@@ -216,25 +233,5 @@ Dette sørger for at `Deploy`-konfigurasjonen starter automatisk når `Package` 
 4. Se at `Package` steget starter automatisk når `Compile & Test` fullfører
 5. Se at `Deploy` steget starter automatisk når `Package` fullfører
 6. Gå til http://nerdschool.cloudapp.net:<din port> og se at nettsiden kjører
-
-# FAQ/Tips
-
-### Parametere og mapper
-
-Parametere er systemvariabler som referer til verdier, navn eller mapper på byggeserveren som vi kan bruke under oppsettet. F.eks så referer variabelen `%teamcity.agent.work.dir%` til mappen `C:\TeamCity\buildAgent\work` på byggeserveren, som er rotmappen for der filer TeamCity henter fra git blir lagt. 
-
-TBA TBA
-
-3. Name: `<gruppenavn>.app.target`
-4. Value: Plassering til `target`-mappen: `app\target`
-
-6. Name: `<gruppenavn>.dropfolder`
-7. Value: `%teamcity.agent.work.dir%\<gruppenavn>\`
-
-9. Name: `<gruppenavn>.dropfolder.app`
-10. Value: `app`
-
-12. Name: `<gruppenavn>.dropfolder.app.target`
-13. Value: `%system.dropfolder%\app\target`
 
 

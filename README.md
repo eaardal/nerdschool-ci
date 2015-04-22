@@ -126,6 +126,12 @@ Kommandoen for å bygge med Maven er `mvn clean install`, gitt at man står i ma
 1. På admin-fremsiden til *gruppeprosjektet*, velg `General Settings` og `Create build configuration`
 2. Name: `Compile & Test` -> `Save`
 
+### VCS Root
+
+1. I menyen til venstre velg `VCS Root` -> `Attach VCS root`
+2. Velg git-konfigurasjonen tilhørende din gruppe i nedrekkslisten
+3. Trykk `Attach`-knappen for å legge den til
+
 ### Build Step 1: Compile & Test
 
 1. I menyen til venstre velg `Build Steps` -> `Add build step`
